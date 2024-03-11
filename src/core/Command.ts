@@ -2,6 +2,7 @@ import { Collection } from '@/utils/Collection'
 import { CliComponent } from '@/core/CliComponent'
 import { Option } from '@/core/Option'
 import { printHelperText } from '@/utils/console-helper'
+import { OptionValue } from '@/utils/process-helper'
 
 export class Command extends CliComponent {
   public commands: Collection<string, Command> = new Collection()
@@ -39,13 +40,15 @@ export class Command extends CliComponent {
     return this
   }
 
-  setAction(callback: CallableFunction) {
+  setAction(callback: (...flags: OptionValue[]) => void) {
     this.action = callback
     return this
   }
 
-  doAction(...flags: string[]) {
-    if (this.hasDefaultFlags(flags)) {
+  doAction(...flags: OptionValue[]) {
+    const names = flags.map(({ name }) => name)
+
+    if (this.hasDefaultFlags(names)) {
       this.doDefaultAction(flags)
       return
     }
@@ -57,11 +60,13 @@ export class Command extends CliComponent {
     return flags.some((flag) => this.options.get('help')?.validate(flag))
   }
 
-  doDefaultAction(flags: string[]) {
+  doDefaultAction(flags: OptionValue[]) {
     // only run the first default action
-    const keys = flags.filter((flag) => this.options.get('help')?.validate(flag))
-    if (keys.length) {
-      this.options.get(Option.extractOption(keys[0]))?.doAction()
+    const defaultActions = flags.filter((flag) => this.options.get('help')?.validate(flag.name))
+    if (defaultActions.length) {
+      defaultActions.forEach((option) => {
+        this.options.get(Option.extractOption(option.name))?.doAction(option.value)
+      })
     }
   }
 }

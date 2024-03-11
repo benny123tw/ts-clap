@@ -4,7 +4,6 @@ import { node } from '@liuli-util/vite-plugin-node'
 
 export default defineConfig({
   plugins: [node({
-    outDir: 'bin',
     shims: true,
   })],
   resolve: {

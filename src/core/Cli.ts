@@ -4,7 +4,7 @@ import { Command } from '@/core/Command'
 import { printHelperText } from '@/utils/console-helper'
 import { Option } from '@/core/Option'
 import { Collection } from '@/utils/Collection'
-import { executePrase, parseCommandLine } from '@/utils/process-helper'
+import { executeParse, parseCommandLine } from '@/utils/process-helper'
 import { version as packageVersion } from '../../package.json'
 
 export class Cli {
@@ -93,11 +93,12 @@ export class Cli {
   }
 
   parse() {
-    return parseCommandLine()
+    const parsed = parseCommandLine(this)
+    return parsed
   }
 
   exec() {
-    return executePrase(this, this.parse())
+    return executeParse(this, this.parse())
   }
 }
 

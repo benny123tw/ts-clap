@@ -80,3 +80,7 @@ export function printHelperText(t: Command | Cli) {
     printOptionWithDescription(t.options, { maxWidth, paddingLeft: 2 })
   }
 }
+
+export function logUnexpectedValueError(type: string, value: string) {
+  console.log(chalk.red('error:'), `unexpected ${type} '${chalk.yellow(value)}' found\n\nFor more information, try '--help'.`)
+}

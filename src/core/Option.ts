@@ -23,13 +23,17 @@ export class Option extends CliComponent {
     return this
   }
 
-  setAction(callback: CallableFunction) {
+  getValue() {
+    return this.value_name
+  }
+
+  setAction(callback: (value: string) => void) {
     this.action = callback
     return this
   }
 
-  doAction() {
-    return this.action()
+  doAction(value: string | null) {
+    return this.action(value)
   }
 
   getShort() {
@@ -37,7 +41,8 @@ export class Option extends CliComponent {
   }
 
   validate(flag: string) {
-    return flag.includes(this.name) || flag.includes(this.short_name)
+    const flagName = Option.extractOption(flag)
+    return flagName === this.name || flagName === this.short_name
   }
 
   toString() {

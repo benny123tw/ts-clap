@@ -1,48 +1,121 @@
-import Cli from '@/core/Cli'
-import chalk from 'chalk'
-import { Command } from '@/core/Command'
-import { Option } from '@/core/Option'
+import { Cli, Command, Option } from '@/core'
+import { logUnexpectedValueError } from '@/utils/console-helper'
 
-export type Context = {
-  command: string | null
-  options: string[]
-  subcommands: Context[]
+export interface OptionValue {
+  name: string
+  value: string | null
 }
 
-export function parseCommandLine() {
+export interface ArgValue {
+  name: string
+  value: string
+}
+
+export interface Context {
+  command: string | null
+  subcommand: Context | null
+  options: OptionValue[]
+  args?: ArgValue[]
+}
+
+export function parseCommandLine(cli: Cli) {
+  const registryArgs = Array.from(cli.args.keys())
+
   const parts = process.argv.slice(2)
   const commandStack: Context[] = []
-  let currentContext: Context = {
-    command: null,
-    options: [],
-    subcommands: [],
-  }
+  let rootContext: Context = createNewContext(true)
+  let lastOption: string | null = null
+  let currentContext: Context = rootContext
+  let lastArgIndex: number = 0
 
-  parts.forEach((part) => {
-    if (!part.startsWith('-')) {
-      if (currentContext.command === null) {
-        if (!currentContext.options.length) {
-          currentContext.command = part
-          return
-        }
-      }
+  parts.forEach((part, index) => {
+    const cliOrCmd: Cli | Command =
+      (currentContext.command ? cli.commands.get(currentContext.command) : cli) || cli
+    const option = cliOrCmd.options.find((o) => o.validate(Option.extractOption(lastOption || '')))
 
-      // Non-option arguments are commands or subcommands
-      const newContext = {
-        command: part,
-        options: [],
-        subcommands: [],
-      }
-      currentContext.subcommands.push(newContext)
-      commandStack.push(currentContext) // Push the current context onto the stack
-      currentContext = newContext // Set the new context as the current one
-    } else {
-      // Option arguments are added to the current context's options
-      currentContext.options.push(part)
+    if (part.match(/^-/)) {
+      lastOption = handleOption(cliOrCmd, part, currentContext)
+      return
     }
+
+    if (option && option.getValue() && lastOption) {
+      handleOptionValue(part, currentContext)
+      lastOption = null
+      return
+    }
+
+    if (
+      (!currentContext.command && cli.commands.get(part)) ||
+      (currentContext.command && cli.commands.get(currentContext.command)?.commands.get(part))
+    ) {
+      currentContext = handleNewCommand(part, currentContext, commandStack)
+      return
+    }
+
+    if (registryArgs.length) {
+      lastArgIndex = handleArg(part, rootContext, registryArgs, lastArgIndex)
+      return
+    }
+
+    logUnexpectedValueError('argument', part)
+    process.exit(1)
   })
 
   // Unwind the stack to build the final structure
+  return unwindCommandStack(commandStack, rootContext)
+}
+
+function createNewContext(hasArgs: boolean = false): Context {
+  return {
+    command: null,
+    subcommand: null,
+    options: [],
+    ...(hasArgs ? { args: [] } : {}),
+  }
+}
+
+function handleOption(cli: Cli | Command, part: string, context: Context) {
+  const option = cli.options.find((o) => o.validate(Option.extractOption(part)))
+  if (option) {
+    context.options.push({ name: option.name, value: null })
+    return part
+  } else {
+    logUnexpectedValueError('option', part)
+    process.exit(1)
+  }
+}
+
+function handleOptionValue(part: string, context: Context) {
+  const option = context.options.at(-1)
+  if (option) {
+    option.value = part
+  }
+}
+
+function handleArg(
+  part: string,
+  rootContext: Context,
+  registryArgs: string[],
+  lastArgIndex: number,
+) {
+  if (lastArgIndex < registryArgs.length) {
+    rootContext.args?.push({ name: registryArgs[lastArgIndex], value: part })
+    return lastArgIndex + 1
+  } else {
+    logUnexpectedValueError('argument', part)
+    process.exit(1)
+  }
+}
+
+function handleNewCommand(part: string, currentContext: Context, commandStack: Context[]): Context {
+  const newContext = createNewContext()
+  newContext.command = part
+  currentContext.subcommand = newContext
+  commandStack.push(currentContext)
+  return newContext
+}
+
+function unwindCommandStack(commandStack: Context[], currentContext: Context): Context {
   let finalContext = commandStack.length > 0 ? commandStack[0] : currentContext
   while (commandStack.length > 0) {
     const parentContext = commandStack.pop()
@@ -52,36 +125,42 @@ export function parseCommandLine() {
 
     if (commandStack.length > 0) {
       const lastContext = commandStack[commandStack.length - 1]
-      lastContext.subcommands[lastContext.subcommands.length - 1] = parentContext
+      lastContext.subcommand = parentContext
     } else {
       finalContext = parentContext
     }
   }
-
   return finalContext
 }
 
-export function executePrase(cli: Cli | Command, context: Context) {
-  if (context.command) {
-    const cmd = cli.commands.get(context.command)
-
-    if (!cmd) {
-      console.log(chalk.red('Cannot find the command:', context.command))
-      console.log()
-      cli.help()
-      return
+export function executeParse(cli: Cli | Command, context: Context) {
+  // If there's no command, we're at the root or an option context.
+  if (!context.command) {
+    executeOptions(cli, context)
+    if (context.subcommand) {
+      executeParse(cli, context.subcommand)
     }
-
-    cmd.doAction(...context.options)
-
-    if (context.subcommands.length) {
-      executePrase(cmd, context.subcommands[0])
-    }
-  } else {
-    if (context.options.length) {
-      context.options.forEach((key) => {
-        cli.options.get(Option.extractOption(key))?.doAction()
-      })
-    }
+    return
   }
+
+  // Execute the command if it exists.
+  const cmd = cli.commands.get(context.command)
+  if (!cmd) {
+    logUnexpectedValueError('command', context.command)
+    process.exit(1)
+  }
+
+  cmd.doAction(...context.options)
+
+  // Recursively execute subcommands if they exist.
+  if (context.subcommand) {
+    executeParse(cmd, context.subcommand)
+  }
+}
+
+function executeOptions(cli: Cli | Command, context: Context) {
+  context.options.forEach(({ name, value }) => {
+    const option = cli.options.get(Option.extractOption(name))
+    option?.doAction(value)
+  })
 }
