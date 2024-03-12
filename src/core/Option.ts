@@ -4,7 +4,7 @@ export class Option extends CliComponent {
   private short_name: string = ''
   private value_name: string = ''
 
-  private action: CallableFunction = () => {
+  private callback: CallableFunction = () => {
     console.log(`Option ${this.name} is not implement.`)
   }
 
@@ -27,13 +27,13 @@ export class Option extends CliComponent {
     return this.value_name
   }
 
-  setAction(callback: (value: string) => void) {
-    this.action = callback
+  action(callback: (value: string) => void) {
+    this.callback = callback
     return this
   }
 
-  doAction(value: string | null) {
-    return this.action(value)
+  execute(value: string | null) {
+    return this.callback(value)
   }
 
   getShort() {

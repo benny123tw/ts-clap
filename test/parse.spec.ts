@@ -7,7 +7,7 @@ const mockCli = new Cli('My new app')
   .description('This is a description for my cli app.')
   .command(
     new Command('hello', 'does testing thing')
-      .setAction((...flags) => {
+      .action((...flags) => {
         const name = flags.find(flag => flag.name === 'name')?.value || 'World'
         console.log(`Hello, ${name}!`)
       })
@@ -17,7 +17,7 @@ const mockCli = new Cli('My new app')
     new Option('config')
       .description('This config is used to set the path of the config file.')
       .value('FILE')
-      .setAction((file) => {
+      .action((file) => {
         console.log(file)
       }),
   )

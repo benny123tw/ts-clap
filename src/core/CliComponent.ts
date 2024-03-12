@@ -1,5 +1,5 @@
 export abstract class CliComponent {
-  constructor(public name: string, public desc: string = '') {}
+  constructor(public name: string, private desc: string = '') {}
 
   description(content: string) {
     this.desc = content

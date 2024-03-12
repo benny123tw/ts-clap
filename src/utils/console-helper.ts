@@ -56,7 +56,7 @@ export function printOptionWithDescription(
 
 export function printHelperText(t: Command | Cli) {
   console.log(t.name)
-  console.log(t.desc ? chalk.italic(`${t.desc}\n`) : '')
+  console.log(t.getDescription() ? chalk.italic(`${t.getDescription()}\n`) : '')
 
   const maxWidth = calculateMaxWidth(t)
 

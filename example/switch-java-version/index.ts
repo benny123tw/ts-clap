@@ -12,7 +12,7 @@ new Cli('My new app')
   .command(
     new Command('current')
       .description('output the current version of Java')
-      .setAction(() => {
+      .action(() => {
         console.log(chalk.underline('Java Home'))
         console.log(process.env.JAVA_HOME)
 
@@ -21,7 +21,7 @@ new Cli('My new app')
       }),
   )
   .command(
-    new Command('list').description('list all the available versions of Java').setAction(() => {}),
+    new Command('list').description('list all the available versions of Java').action(() => {}),
   )
   .arg(new Arg('name').description('This is first description of the first arg'))
   .arg(new Arg('count').description('This is second description for second arg'))
@@ -29,7 +29,7 @@ new Cli('My new app')
     new Option('config')
       .description('This config is used to set the path of the config file.')
       .value('FILE')
-      .setAction((file) => {
+      .action((file) => {
         console.log('file', file)
       }),
   )

@@ -3,18 +3,15 @@ import { CliComponent } from '@/core/CliComponent'
 import { Option } from '@/core/Option'
 import { printHelperText } from '@/utils/console-helper'
 import type { OptionValue } from '@/utils/process-helper'
+import { createDefaultOptions } from '@/utils/default-command'
 
 export class Command extends CliComponent {
   public commands: Collection<string, Command> = new Collection()
-  public options: Collection<string, Option> = new Collection([
-    ['help', new Option('help', 'Print help').setAction(() => this.help())],
-  ])
+  public options: Collection<string, Option> = createDefaultOptions(this)
 
-  private action: CallableFunction = () => {
+  private callback: CallableFunction = () => {
     console.log(`Command \`${this.name}\` not implement.`)
   }
-
-  private helpDescription: string = `No description in Command ${this.name}`
 
   help() {
     printHelperText(this)
@@ -40,32 +37,32 @@ export class Command extends CliComponent {
     return this
   }
 
-  setAction(callback: (...flags: OptionValue[]) => void) {
-    this.action = callback
+  action(callback: (...flags: OptionValue[]) => void) {
+    this.callback = callback
     return this
   }
 
-  doAction(...flags: OptionValue[]) {
+  execute(...flags: OptionValue[]) {
     const names = flags.map(({ name }) => name)
 
     if (this.hasDefaultFlags(names)) {
-      this.doDefaultAction(flags)
+      this.executeDefaultAction(flags)
       return
     }
 
-    this.action(...flags)
+    this.callback(...flags)
   }
 
   hasDefaultFlags(flags: string[]) {
     return flags.some(flag => this.options.get('help')?.validate(flag))
   }
 
-  doDefaultAction(flags: OptionValue[]) {
+  private executeDefaultAction(flags: OptionValue[]) {
     // only run the first default action
     const defaultActions = flags.filter(flag => this.options.get('help')?.validate(flag.name))
     if (defaultActions.length) {
       defaultActions.forEach((option) => {
-        this.options.get(Option.extractOption(option.name))?.doAction(option.value)
+        this.options.get(Option.extractOption(option.name))?.execute(option.value)
       })
     }
   }

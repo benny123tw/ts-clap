@@ -4,39 +4,19 @@ import { version as packageVersion } from '../../package.json'
 import { Arg, Command, Option } from '@/core'
 import { printHelperText } from '@/utils/console-helper'
 import { executeParse, parseCommandLine } from '@/utils/process-helper'
+import { createDefaultCommands, createDefaultOptions } from '@/utils/default-command'
 
 export class Cli {
   public args: Collection<string, Arg> = new Collection()
-  public commands: Collection<string, Command> = new Collection([
-    [
-      'help',
-      new Command('help', 'Print this message or the help of the given subcommand(s)').setAction(
-        () => {
-          this.help()
-        },
-      ),
-    ],
-  ])
+  public commands: Collection<string, Command>
+  public options: Collection<string, Option>
 
-  public options: Collection<string, Option> = new Collection([
-    [
-      'help',
-      new Option('help', 'Print help').setAction(() => {
-        this.help()
-      }),
-    ],
-    [
-      'version',
-      new Option('version', 'Print the app version').setAction(() => {
-        console.log(this.ver)
-      }),
-    ],
-  ])
+  private ver: string = `v${packageVersion}`
 
-  public desc: string = ''
-  public ver: string = `v${packageVersion}`
-
-  constructor(public name: string) {}
+  constructor(public name: string, private desc: string = '') {
+    this.commands = createDefaultCommands(this)
+    this.options = createDefaultOptions(this)
+  }
 
   logo() {
     return new Promise((resolve, reject) => {
@@ -95,6 +75,14 @@ export class Cli {
 
   exec() {
     return executeParse(this, this.parse())
+  }
+
+  getDescription() {
+    return this.desc
+  }
+
+  getVersion() {
+    return this.ver
   }
 }
 

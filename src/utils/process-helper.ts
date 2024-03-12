@@ -153,7 +153,7 @@ export function executeParse(cli: Cli | Command, context: Context) {
     process.exit(1)
   }
 
-  cmd.doAction(...context.options)
+  cmd.execute(...context.options)
 
   // Recursively execute subcommands if they exist.
   if (context.subcommand)
@@ -163,6 +163,6 @@ export function executeParse(cli: Cli | Command, context: Context) {
 function executeOptions(cli: Cli | Command, context: Context) {
   context.options.forEach(({ name, value }) => {
     const option = cli.options.get(Option.extractOption(name))
-    option?.doAction(value)
+    option?.execute(value)
   })
 }
