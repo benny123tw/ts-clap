@@ -1,4 +1,4 @@
-import { Cli, Command } from '../..'
+import { Cli, Command } from 'ts-clap'
 
 new Cli('Coolest App')
   .description('This is the coolest app ever!')

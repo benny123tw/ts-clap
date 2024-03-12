@@ -1,0 +1,17 @@
+{
+  "name": "first-cli-app",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "example app for ts-clap",
+  "author": "Benny Yen <benny123tw@gmail.com>",
+  "license": "ISC",
+  "keywords": [],
+  "main": "index.js",
+  "bin": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "ts-clap": "link:..\\.."
+  }
+}
