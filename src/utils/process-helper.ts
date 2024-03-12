@@ -1,4 +1,6 @@
-import { Cli, Command, Option } from '@/core'
+import process from 'node:process'
+import type { Cli, Command } from '@/core'
+import { Option } from '@/core'
 import { logUnexpectedValueError } from '@/utils/console-helper'
 
 export interface OptionValue {
@@ -23,15 +25,15 @@ export function parseCommandLine(cli: Cli) {
 
   const parts = process.argv.slice(2)
   const commandStack: Context[] = []
-  let rootContext: Context = createNewContext(true)
+  const rootContext: Context = createNewContext(true)
   let lastOption: string | null = null
   let currentContext: Context = rootContext
   let lastArgIndex: number = 0
 
-  parts.forEach((part, index) => {
-    const cliOrCmd: Cli | Command =
-      (currentContext.command ? cli.commands.get(currentContext.command) : cli) || cli
-    const option = cliOrCmd.options.find((o) => o.validate(Option.extractOption(lastOption || '')))
+  parts.forEach((part) => {
+    const cliOrCmd: Cli | Command
+      = (currentContext.command ? cli.commands.get(currentContext.command) : cli) || cli
+    const option = cliOrCmd.options.find(o => o.validate(Option.extractOption(lastOption || '')))
 
     if (part.match(/^-/)) {
       lastOption = handleOption(cliOrCmd, part, currentContext)
@@ -45,8 +47,8 @@ export function parseCommandLine(cli: Cli) {
     }
 
     if (
-      (!currentContext.command && cli.commands.get(part)) ||
-      (currentContext.command && cli.commands.get(currentContext.command)?.commands.get(part))
+      (!currentContext.command && cli.commands.get(part))
+      || (currentContext.command && cli.commands.get(currentContext.command)?.commands.get(part))
     ) {
       currentContext = handleNewCommand(part, currentContext, commandStack)
       return
@@ -75,11 +77,12 @@ function createNewContext(hasArgs: boolean = false): Context {
 }
 
 function handleOption(cli: Cli | Command, part: string, context: Context) {
-  const option = cli.options.find((o) => o.validate(Option.extractOption(part)))
+  const option = cli.options.find(o => o.validate(Option.extractOption(part)))
   if (option) {
     context.options.push({ name: option.name, value: null })
     return part
-  } else {
+  }
+  else {
     logUnexpectedValueError('option', part)
     process.exit(1)
   }
@@ -87,9 +90,8 @@ function handleOption(cli: Cli | Command, part: string, context: Context) {
 
 function handleOptionValue(part: string, context: Context) {
   const option = context.options.at(-1)
-  if (option) {
+  if (option)
     option.value = part
-  }
 }
 
 function handleArg(
@@ -101,7 +103,8 @@ function handleArg(
   if (lastArgIndex < registryArgs.length) {
     rootContext.args?.push({ name: registryArgs[lastArgIndex], value: part })
     return lastArgIndex + 1
-  } else {
+  }
+  else {
     logUnexpectedValueError('argument', part)
     process.exit(1)
   }
@@ -119,14 +122,14 @@ function unwindCommandStack(commandStack: Context[], currentContext: Context): C
   let finalContext = commandStack.length > 0 ? commandStack[0] : currentContext
   while (commandStack.length > 0) {
     const parentContext = commandStack.pop()
-    if (!parentContext) {
+    if (!parentContext)
       throw new Error('Something went wrong in parse function.')
-    }
 
     if (commandStack.length > 0) {
       const lastContext = commandStack[commandStack.length - 1]
       lastContext.subcommand = parentContext
-    } else {
+    }
+    else {
       finalContext = parentContext
     }
   }
@@ -137,9 +140,9 @@ export function executeParse(cli: Cli | Command, context: Context) {
   // If there's no command, we're at the root or an option context.
   if (!context.command) {
     executeOptions(cli, context)
-    if (context.subcommand) {
+    if (context.subcommand)
       executeParse(cli, context.subcommand)
-    }
+
     return
   }
 
@@ -153,9 +156,8 @@ export function executeParse(cli: Cli | Command, context: Context) {
   cmd.doAction(...context.options)
 
   // Recursively execute subcommands if they exist.
-  if (context.subcommand) {
+  if (context.subcommand)
     executeParse(cmd, context.subcommand)
-  }
 }
 
 function executeOptions(cli: Cli | Command, context: Context) {

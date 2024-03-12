@@ -1,4 +1,4 @@
-import { CliComponent } from '@/core/CliComponent'
+import { CliComponent } from '@/core'
 
 export class Option extends CliComponent {
   private short_name: string = ''

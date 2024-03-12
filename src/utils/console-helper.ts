@@ -1,17 +1,15 @@
+import type { Collection } from '@discordjs/collection'
 import chalk from 'chalk'
-import Cli from '@/core/Cli'
-import { CliComponent } from '@/core/CliComponent'
-import { Option } from '@/core/Option'
-import { Collection } from '@/utils/Collection'
-import { Command } from '@/core/Command'
+import type { CliComponent, Command, Option } from '@/core'
+import { Cli } from '@/core'
 
-type Options = {
+interface Options {
   maxWidth: number
   paddingLeft: number
 }
 
 export function calculateMaxWidth(cli: Cli | Command) {
-  let components: Collection<string, CliComponent>[] = [cli.commands, cli.options]
+  const components: Collection<string, CliComponent>[] = [cli.commands, cli.options]
   return components
     .concat(cli instanceof Cli ? [cli.args] : [])
     .reduce(

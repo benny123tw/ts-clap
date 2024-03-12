@@ -1,5 +1,5 @@
 export { Arg } from '@/core/Arg'
 export { Cli } from '@/core/Cli'
+export { CliComponent } from '@/core/CliComponent'
 export { Command } from '@/core/Command'
 export { Option } from '@/core/Option'
-export { CliComponent } from '@/core/CliComponent'
