@@ -77,6 +77,10 @@ export class Cli {
     return executeParse(this, this.parse())
   }
 
+  printUsage() {
+
+  }
+
   getDescription() {
     return this.desc
   }

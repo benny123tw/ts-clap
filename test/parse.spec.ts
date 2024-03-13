@@ -68,12 +68,10 @@ describe('parse command line', () => {
     process.argv = ['npx', 'ts-clap', '--config', 'path/to/config', 'wrong-argument']
 
     mockCli.parse()
-    expect(consoleMock).toHaveBeenCalledOnce()
-    expect(consoleMock).toHaveBeenLastCalledWith(
-      chalk.red('error:'),
-      `unexpected argument '${chalk.yellow(
+    expect(consoleMock).toHaveBeenCalledWith(
+      `${chalk.red('error:')} unexpected argument '${chalk.yellow(
         'wrong-argument',
-      )}' found\n\nFor more information, try '--help'.`,
+      )}' found\n`,
     )
   })
 
@@ -95,5 +93,18 @@ describe('parse command line', () => {
     mockCli.exec()
 
     expect(consoleMock).toHaveBeenCalledWith('Hello, John!')
+  })
+
+  it('should find similar option', () => {
+    process.argv = ['npx', 'ts-clap', 'hello', '--nam']
+    mockCli.exec()
+
+    expect(consoleMock).toHaveBeenCalledWith(
+      `${chalk.red('error:')} unexpected option '${chalk.yellow(
+        '--nam',
+      )}' found\n`,
+    )
+    // TODO: should test the function return string instead of console.log
+    expect(consoleMock).toHaveBeenCalledWith(' ', chalk.green('tip:'), 'a similar', 'argument', 'exists:', `'${chalk.green('name')}'`)
   })
 })

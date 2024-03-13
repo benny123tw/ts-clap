@@ -1,3 +1,9 @@
+import type { Collection } from '@discordjs/collection'
+import type { Command } from './Command'
+import type { Option } from './Option'
+import type { Arg } from './Arg'
+import { levenshteinDistance } from '@/utils/levenshtein-distance'
+
 export abstract class CliComponent {
   constructor(public name: string, private desc: string = '') {}
 
@@ -10,7 +16,15 @@ export abstract class CliComponent {
     return this.desc
   }
 
-  toString() {
+  toString(..._args: any[]) {
     return this.name
+  }
+
+  static findSimilarName<T extends Command | Option | Arg>(name: string, collection: Collection<string, T>) {
+    const similarItems = collection.map((c) => {
+      const distance = levenshteinDistance(c.name, name)
+      return { similarity: 1 - (distance / Math.max(c.name.length, name.length)), argument: c }
+    }).sort((a, b) => a.similarity - b.similarity)
+    return similarItems.filter(c => c.similarity >= 0.4).at(0)?.argument
   }
 }

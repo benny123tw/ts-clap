@@ -1,7 +1,7 @@
 import process from 'node:process'
 import type { Cli, Command } from '@/core'
-import { Option } from '@/core'
-import { logUnexpectedValueError } from '@/utils/console-helper'
+import { CliComponent, Option } from '@/core'
+import { logUnexpectedArgumentError, logUnrecognizedCommandError, printHelpMessage, printSimilarArg } from '@/utils/console-helper'
 
 export interface OptionValue {
   name: string
@@ -54,12 +54,22 @@ export function parseCommandLine(cli: Cli) {
       return
     }
 
-    if (registryArgs.length) {
+    if (registryArgs.length && lastArgIndex < registryArgs.length) {
       lastArgIndex = handleArg(part, rootContext, registryArgs, lastArgIndex)
       return
     }
 
-    logUnexpectedValueError('argument', part)
+    const similar = CliComponent.findSimilarName(part, cli.commands)
+
+    if (similar) {
+      logUnrecognizedCommandError('subcommand', part)
+      printSimilarArg('subcommand', similar.name)
+    }
+    else {
+      logUnexpectedArgumentError('argument', part)
+    }
+
+    printHelpMessage()
     process.exit(1)
   })
 
@@ -82,10 +92,18 @@ function handleOption(cli: Cli | Command, part: string, context: Context) {
     context.options.push({ name: option.name, value: null })
     return part
   }
-  else {
-    logUnexpectedValueError('option', part)
-    process.exit(1)
-  }
+
+  logUnexpectedArgumentError('option', part)
+
+  const similar = CliComponent.findSimilarName(part, cli.options)
+
+  if (similar)
+    printSimilarArg('argument', similar.name)
+
+  else Option.printTip(part)
+
+  printHelpMessage()
+  process.exit(1)
 }
 
 function handleOptionValue(part: string, context: Context) {
@@ -100,14 +118,8 @@ function handleArg(
   registryArgs: string[],
   lastArgIndex: number,
 ) {
-  if (lastArgIndex < registryArgs.length) {
-    rootContext.args?.push({ name: registryArgs[lastArgIndex], value: part })
-    return lastArgIndex + 1
-  }
-  else {
-    logUnexpectedValueError('argument', part)
-    process.exit(1)
-  }
+  rootContext.args?.push({ name: registryArgs[lastArgIndex], value: part })
+  return lastArgIndex + 1
 }
 
 function handleNewCommand(part: string, currentContext: Context, commandStack: Context[]): Context {
@@ -140,6 +152,7 @@ export function executeParse(cli: Cli | Command, context: Context) {
   // If there's no command, we're at the root or an option context.
   if (!context.command) {
     executeOptions(cli, context)
+
     if (context.subcommand)
       executeParse(cli, context.subcommand)
 
@@ -149,7 +162,7 @@ export function executeParse(cli: Cli | Command, context: Context) {
   // Execute the command if it exists.
   const cmd = cli.commands.get(context.command)
   if (!cmd) {
-    logUnexpectedValueError('command', context.command)
+    logUnexpectedArgumentError('command', context.command)
     process.exit(1)
   }
 

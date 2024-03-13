@@ -7,10 +7,15 @@ import { createDefaultOptions } from '@/utils/default-command'
 
 export class Command extends CliComponent {
   public commands: Collection<string, Command> = new Collection()
-  public options: Collection<string, Option> = createDefaultOptions(this)
+  public options: Collection<string, Option>
 
   private callback: CallableFunction = () => {
     console.log(`Command \`${this.name}\` not implement.`)
+  }
+
+  constructor(name: string, desc: string = '') {
+    super(name, desc)
+    this.options = createDefaultOptions(this)
   }
 
   help() {

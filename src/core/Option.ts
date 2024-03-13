@@ -1,3 +1,4 @@
+import chalk from 'chalk'
 import { CliComponent } from '@/core'
 
 export class Option extends CliComponent {
@@ -45,11 +46,22 @@ export class Option extends CliComponent {
     return flagName === this.name || flagName === this.short_name
   }
 
-  toString() {
-    return `-${this.short_name}, --${this.name} ${this.value_name ? `<${this.value_name}>` : ''}`
+  toString({ withShort } = { withShort: true }) {
+    if (withShort)
+      return `-${this.short_name}, --${this.name} ${this.value_name ? `<${this.value_name}>` : ''}`
+
+    return `--${this.name} ${this.value_name ? `<${this.value_name}>` : ''}`
   }
 
   static extractOption(flag: string) {
     return flag.replace(/^-*/, '')
+  }
+
+  static printTip(name: string) {
+    const tip = chalk.green('tip:')
+    const value = chalk.yellow(name)
+    const usage = chalk.green(`-- ${name}`)
+
+    console.log(`  ${tip} to pass '${value}' as a value, use '${usage}'\n`)
   }
 }

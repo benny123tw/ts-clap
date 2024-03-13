@@ -79,6 +79,26 @@ export function printHelperText(t: Command | Cli) {
   }
 }
 
-export function logUnexpectedValueError(type: string, value: string) {
-  console.log(chalk.red('error:'), `unexpected ${type} '${chalk.yellow(value)}' found\n\nFor more information, try '--help'.`)
+export function printSimilarArg(type: string, similar: string) {
+  console.log(' ', chalk.green('tip:'), 'a similar', type, 'exists:', `'${chalk.green(similar)}'`)
+  console.log()
+}
+
+export function printHelpMessage() {
+  const helpMessage = 'For more information, try \'--help\'.'
+  console.log(helpMessage)
+}
+
+export function logUnexpectedArgumentError(type: string, arg: string) {
+  const errorPrefix = chalk.red('error:')
+  const unexpectedValueMessage = `unexpected ${type} '${chalk.yellow(arg)}' found`
+
+  console.log(`${errorPrefix} ${unexpectedValueMessage}\n`)
+}
+
+export function logUnrecognizedCommandError(type: string, command: string) {
+  const errorPrefix = chalk.red('error:')
+  const unrecognizedCommandMessage = `unrecognized ${type} '${chalk.yellow(command)}'`
+
+  console.log(`${errorPrefix} ${unrecognizedCommandMessage}\n`)
 }
