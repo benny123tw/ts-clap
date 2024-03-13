@@ -1,13 +1,10 @@
 import path from 'node:path'
 import process from 'node:process'
 import chalk from 'chalk'
-import { Cli } from '@/core/Cli'
-import { Command } from '@/core/Command'
-import { Arg } from '@/core/Arg'
-import { Option } from '@/core/Option'
+import { Arg, Cli, Command, Option } from 'ts-clap'
 
-new Cli('My new app')
-  .description('This is a description for my cli app.')
+new Cli('switch-java-version')
+  .description('This simple cli app is used to switch between different versions of Java.')
   .command('test', 'does testing thing')
   .command(
     new Command('current')

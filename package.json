@@ -17,7 +17,8 @@
       "require": "./dist/index.cjs"
     }
   },
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": "./bin/index.js",
   "files": [
@@ -27,8 +28,7 @@
   "scripts": {
     "build": "tsup --format esm,cjs --clean --dts",
     "stub": "tsup --format esm",
-    "dev": "tsup --format esm,cjs --watch & eslint-flat-config-viewer",
-    "watch": "tsup --format esm,cjs --watch",
+    "dev": "tsup --format esm,cjs --watch",
     "lint": "eslint .",
     "prepack": "nr build",
     "release": "bumpp && pnpm publish",
