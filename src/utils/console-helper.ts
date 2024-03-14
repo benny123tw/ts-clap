@@ -2,6 +2,7 @@ import type { Collection } from '@discordjs/collection'
 import chalk from 'chalk'
 import type { CliComponent, Command, Option } from '@/core'
 import { Cli } from '@/core'
+import { LogType } from '@/utils/Logger'
 
 interface Options {
   maxWidth: number
@@ -80,8 +81,12 @@ export function printHelperText(t: Command | Cli) {
 }
 
 export function printSimilarArg(type: string, similar: string) {
-  console.log(' ', chalk.green('tip:'), 'a similar', type, 'exists:', `'${chalk.green(similar)}'`)
-  console.log()
+  const similarMessage = `a similar ${type} exists: '${chalk.green(similar)}'`
+
+  return {
+    type: LogType.Tips,
+    message: similarMessage,
+  }
 }
 
 export function printHelpMessage() {
@@ -90,15 +95,19 @@ export function printHelpMessage() {
 }
 
 export function logUnexpectedArgumentError(type: string, arg: string) {
-  const errorPrefix = chalk.red('error:')
   const unexpectedValueMessage = `unexpected ${type} '${chalk.yellow(arg)}' found`
 
-  console.log(`${errorPrefix} ${unexpectedValueMessage}\n`)
+  return {
+    type: LogType.Error,
+    message: unexpectedValueMessage,
+  }
 }
 
 export function logUnrecognizedCommandError(type: string, command: string) {
-  const errorPrefix = chalk.red('error:')
   const unrecognizedCommandMessage = `unrecognized ${type} '${chalk.yellow(command)}'`
 
-  console.log(`${errorPrefix} ${unrecognizedCommandMessage}\n`)
+  return {
+    type: LogType.Error,
+    message: unrecognizedCommandMessage,
+  }
 }

@@ -28,7 +28,7 @@
   "scripts": {
     "build": "tsup --format esm,cjs --clean --dts",
     "stub": "tsup --format esm",
-    "dev": "tsup --format esm,cjs --watch",
+    "dev": "tsup --format esm,cjs --dts --watch",
     "lint": "eslint .",
     "prepack": "nr build",
     "release": "bumpp && pnpm publish",
@@ -46,7 +46,6 @@
     "@types/figlet": "^1.5.8",
     "@types/node": "^20.11.25",
     "eslint": "^8.57.0",
-    "figlet": "^1.7.0",
     "lint-staged": "^15.2.2",
     "simple-git-hooks": "^2.10.0",
     "tsup": "^8.0.2",

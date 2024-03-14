@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import { LogType } from '..'
 import { CliComponent } from '@/core'
 
 export class Option extends CliComponent {
@@ -58,10 +59,15 @@ export class Option extends CliComponent {
   }
 
   static printTip(name: string) {
-    const tip = chalk.green('tip:')
+    // const tip = chalk.green('tip:')
     const value = chalk.yellow(name)
     const usage = chalk.green(`-- ${name}`)
 
-    console.log(`  ${tip} to pass '${value}' as a value, use '${usage}'\n`)
+    // console.log(`  ${tip} to pass '${value}' as a value, use '${usage}'\n`)
+
+    return {
+      type: LogType.Tips,
+      message: `to pass \'${value}\' as a value, use \'${usage}\'\n`,
+    }
   }
 }

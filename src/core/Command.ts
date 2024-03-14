@@ -26,6 +26,8 @@ export class Command extends CliComponent {
     if (!(cmd instanceof Command))
       cmd = new Command(cmd, desc)
 
+    cmd.parent = this
+
     this.commands.set(cmd.name, cmd)
     return this
   }
@@ -37,6 +39,8 @@ export class Command extends CliComponent {
   option(op: string | Option, desc: string = '') {
     if (!(op instanceof Option))
       op = new Option(op, desc)
+
+    op.parent = this
 
     this.options.set(op.name, op)
     return this

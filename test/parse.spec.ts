@@ -1,7 +1,9 @@
 import process from 'node:process'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import chalk from 'chalk'
-import { Cli, Command, Option } from '../src/index'
+import { Cli, CliComponent, Command, Option } from '../src/index'
+import { LogType } from '../src/utils/Logger'
+import { logUnexpectedArgumentError, printSimilarArg } from '@/utils/console-helper'
 
 const mockCli = new Cli('My new app')
   .description('This is a description for my cli app.')
@@ -66,13 +68,9 @@ describe('parse command line', () => {
 
   it('should print the helper text due to unexpected argument', () => {
     process.argv = ['npx', 'ts-clap', '--config', 'path/to/config', 'wrong-argument']
-
-    mockCli.parse()
-    expect(consoleMock).toHaveBeenCalledWith(
-      `${chalk.red('error:')} unexpected argument '${chalk.yellow(
-        'wrong-argument',
-      )}' found\n`,
-    )
+    const { type, message } = logUnexpectedArgumentError('argument', 'wrong-argument')
+    expect(type).to.eq('error')
+    expect(message).to.eq(`unexpected argument '${chalk.yellow('wrong-argument')}' found`)
   })
 
   it('should only print the helper text even the command is provided', () => {
@@ -97,14 +95,19 @@ describe('parse command line', () => {
 
   it('should find similar option', () => {
     process.argv = ['npx', 'ts-clap', 'hello', '--nam']
-    mockCli.exec()
+    const parentCommand = mockCli.commands.get('hello')
+    expect(parentCommand).toBeDefined()
 
-    expect(consoleMock).toHaveBeenCalledWith(
-      `${chalk.red('error:')} unexpected option '${chalk.yellow(
-        '--nam',
-      )}' found\n`,
-    )
-    // TODO: should test the function return string instead of console.log
-    expect(consoleMock).toHaveBeenCalledWith(' ', chalk.green('tip:'), 'a similar', 'argument', 'exists:', `'${chalk.green('name')}'`)
+    const errorLog = logUnexpectedArgumentError('option', '--nam')
+
+    expect(errorLog.type).to.eq(LogType.Error)
+    expect(errorLog.message).to.eq(`unexpected option '${chalk.yellow('--nam')}' found`)
+
+    const similar = CliComponent.findSimilarName('--nam', parentCommand!.options)
+    expect(similar).to.deep.equals(parentCommand!.options.get('name'))
+
+    const similarLog = printSimilarArg('option', `--${similar?.name}`)
+    expect(similarLog.type).to.eq(LogType.Tips)
+    expect(similarLog.message).to.eq(`a similar option exists: '${chalk.green(`--${similar!.name}`)}'`)
   })
 })

@@ -1,7 +1,10 @@
 import process from 'node:process'
 import type { Cli, Command } from '@/core'
 import { CliComponent, Option } from '@/core'
-import { logUnexpectedArgumentError, logUnrecognizedCommandError, printHelpMessage, printSimilarArg } from '@/utils/console-helper'
+import { logUnexpectedArgumentError, logUnrecognizedCommandError, printSimilarArg } from '@/utils/console-helper'
+import { Logger } from '@/utils/Logger'
+
+const logger = Logger.getInstance()
 
 export interface OptionValue {
   name: string
@@ -62,14 +65,17 @@ export function parseCommandLine(cli: Cli) {
     const similar = CliComponent.findSimilarName(part, cli.commands)
 
     if (similar) {
-      logUnrecognizedCommandError('subcommand', part)
-      printSimilarArg('subcommand', similar.name)
+      const errorLog = logUnrecognizedCommandError('subcommand', part)
+      logger.append(errorLog)
+
+      const similarLog = printSimilarArg('subcommand', similar.name)
+      logger.append(similarLog)
     }
     else {
-      logUnexpectedArgumentError('argument', part)
+      const errorLog = logUnexpectedArgumentError('argument', part)
+      logger.append(errorLog)
     }
 
-    printHelpMessage()
     process.exit(1)
   })
 
@@ -93,16 +99,20 @@ function handleOption(cli: Cli | Command, part: string, context: Context) {
     return part
   }
 
-  logUnexpectedArgumentError('option', part)
+  const errorLog = logUnexpectedArgumentError('option', part)
+  logger.append(errorLog)
 
   const similar = CliComponent.findSimilarName(part, cli.options)
 
-  if (similar)
-    printSimilarArg('argument', similar.name)
+  if (similar) {
+    const similarLog = printSimilarArg('argument', `--${similar.name}`)
+    logger.append(similarLog)
+  }
+  else {
+    const tipsLog = Option.printTip(part)
+    logger.append(tipsLog)
+  }
 
-  else Option.printTip(part)
-
-  printHelpMessage()
   process.exit(1)
 }
 
@@ -162,7 +172,9 @@ export function executeParse(cli: Cli | Command, context: Context) {
   // Execute the command if it exists.
   const cmd = cli.commands.get(context.command)
   if (!cmd) {
-    logUnexpectedArgumentError('command', context.command)
+    const errorLog = logUnexpectedArgumentError('command', context.command)
+    logger.append(errorLog)
+
     process.exit(1)
   }
 

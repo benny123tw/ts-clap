@@ -1,10 +1,13 @@
+import process from 'node:process'
 import { Collection } from '@discordjs/collection'
-import figlet from 'figlet'
 import { version as packageVersion } from '../../package.json'
 import { Arg, Command, Option } from '@/core'
 import { printHelperText } from '@/utils/console-helper'
 import { executeParse, parseCommandLine } from '@/utils/process-helper'
 import { createDefaultCommands, createDefaultOptions } from '@/utils/default-command'
+import { Logger } from '@/utils/Logger'
+
+const logger = Logger.getInstance()
 
 export class Cli {
   public args: Collection<string, Arg> = new Collection()
@@ -14,19 +17,14 @@ export class Cli {
   private ver: string = `v${packageVersion}`
 
   constructor(public name: string, private desc: string = '') {
+    this.setUpExitListener()
     this.commands = createDefaultCommands(this)
     this.options = createDefaultOptions(this)
   }
 
-  logo() {
-    return new Promise((resolve, reject) => {
-      figlet.text(this.name, (err, result) => {
-        if (err)
-          return reject(err)
-
-        console.log(result)
-        resolve(result)
-      })
+  private setUpExitListener() {
+    process.on('exit', () => {
+      logger.printLogs()
     })
   }
 
@@ -48,6 +46,8 @@ export class Cli {
     if (!(cmd instanceof Command))
       cmd = new Command(cmd, desc)
 
+    cmd.parent = this
+
     this.commands.set(cmd.name, cmd)
     return this
   }
@@ -56,6 +56,8 @@ export class Cli {
     if (!(arg instanceof Arg))
       arg = new Arg(arg, desc)
 
+    arg.parent = this
+
     this.args.set(arg.name, arg)
     return this
   }
@@ -63,6 +65,8 @@ export class Cli {
   option(o: string | Option, desc?: string) {
     if (!(o instanceof Option))
       o = new Option(o, desc)
+
+    o.parent = this
 
     this.options.set(o.name, o)
     return this

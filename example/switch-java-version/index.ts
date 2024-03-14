@@ -34,4 +34,5 @@ new Cli('switch-java-version')
   .option(
     new Option('path').short('pts').description('Showing the current version of the cli app.'),
   )
+
   .exec()
