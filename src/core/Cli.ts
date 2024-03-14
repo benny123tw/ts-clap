@@ -5,7 +5,8 @@ import { Arg, Command, Option } from '@/core'
 import { printHelperText } from '@/utils/console-helper'
 import { executeParse, parseCommandLine } from '@/utils/process-helper'
 import { createDefaultCommands, createDefaultOptions } from '@/utils/default-command'
-import { Logger } from '@/utils/Logger'
+import type { Log } from '@/utils/Logger'
+import { LogType, Logger } from '@/utils/Logger'
 
 const logger = Logger.getInstance()
 
@@ -91,6 +92,20 @@ export class Cli {
 
   getVersion() {
     return this.ver
+  }
+
+  getUsageLog(): Log {
+    const argsUsage = this.args.size ? this.args.reduce((previous, arg) => `${previous} [${arg.toString().toUpperCase()}]`, '') : ''
+    const message = `${this.name} [OPTIONS]${argsUsage} [COMMAND]`
+
+    return {
+      type: LogType.Usage,
+      message,
+    }
+  }
+
+  toString() {
+    return this.name
   }
 }
 

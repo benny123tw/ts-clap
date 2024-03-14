@@ -13,6 +13,7 @@ export function createDefaultCommands(instance: Cli) {
   const collection = new Collection<string, Command>()
   const help = createHelpCommandOption(Command, { description: 'Print this message or the help of the given subcommand(s)' })
     .action(() => { instance.help() })
+  help.parent = instance
 
   collection.set('help', help)
 
@@ -22,6 +23,7 @@ export function createDefaultCommands(instance: Cli) {
 export function createDefaultOptions(instance: Cli | Command) {
   const help = createHelpCommandOption(Option)
     .action(() => { instance.help() })
+  help.parent = instance
 
   const collection = new Collection<string, Option>()
   collection.set('help', help)

@@ -3,15 +3,15 @@ import chalk from 'chalk'
 export enum LogType {
   Tips = 'tips',
   Error = 'error',
-  Usage = 'usage',
-  Info = 'info',
+  Usage = 'Usage',
 }
+
+export interface Log { type: LogType, message: string }
 
 const typeColorMapping: Record<LogType | string, (text: string) => string> = {
   [LogType.Tips]: chalk.green,
   [LogType.Error]: chalk.red,
   [LogType.Usage]: chalk.underline,
-  [LogType.Info]: chalk.blue,
 }
 
 export class Logger {

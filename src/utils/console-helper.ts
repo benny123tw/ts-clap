@@ -1,7 +1,7 @@
 import type { Collection } from '@discordjs/collection'
 import chalk from 'chalk'
 import type { CliComponent, Command, Option } from '@/core'
-import { Cli } from '@/core'
+import { Arg, Cli } from '@/core'
 import { LogType } from '@/utils/Logger'
 
 interface Options {
@@ -30,9 +30,13 @@ export function printWithDescription(
       return
     }
 
-    const padding = ' '.repeat(maxWidth - arg.name.length)
+    let argName = arg.name
+    if (arg instanceof Arg)
+      argName = `[${argName.toUpperCase()}]`
+
+    const padding = ' '.repeat(maxWidth - argName.length)
     const padding_left = ' '.repeat(paddingLeft)
-    console.log(`${padding_left}${arg.name}${padding}  ${arg.getDescription()}`)
+    console.log(`${padding_left}${argName}${padding}  ${arg.getDescription()}`)
   })
   console.log()
 }
@@ -58,6 +62,10 @@ export function printOptionWithDescription(
 export function printHelperText(t: Command | Cli) {
   console.log(t.name)
   console.log(t.getDescription() ? chalk.italic(`${t.getDescription()}\n`) : '')
+
+  const usageLog = t.getUsageLog()
+  console.log(`${chalk.underline(`${usageLog.type}:`)} ${usageLog.message}`)
+  console.log()
 
   const maxWidth = calculateMaxWidth(t)
 

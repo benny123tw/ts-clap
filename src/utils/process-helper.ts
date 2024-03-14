@@ -32,14 +32,18 @@ export function parseCommandLine(cli: Cli) {
   let lastOption: string | null = null
   let currentContext: Context = rootContext
   let lastArgIndex: number = 0
+  let parent: Cli | Command = cli
+
+  const getParent = (ctx: Context, p: Cli | Command) =>
+    (ctx.command && parent.commands.get(currentContext.command!)) || p
 
   parts.forEach((part) => {
-    const cliOrCmd: Cli | Command
-      = (currentContext.command ? cli.commands.get(currentContext.command) : cli) || cli
-    const option = cliOrCmd.options.find(o => o.validate(Option.extractOption(lastOption || '')))
+    // default set to last parent cuz the argument is not a command
+    parent = getParent(currentContext, parent)
+    const option = parent?.options.find(o => o.validate(Option.extractOption(lastOption || '')))
 
     if (part.match(/^-/)) {
-      lastOption = handleOption(cliOrCmd, part, currentContext)
+      lastOption = handleOption(parent, part, currentContext)
       return
     }
 
@@ -49,10 +53,7 @@ export function parseCommandLine(cli: Cli) {
       return
     }
 
-    if (
-      (!currentContext.command && cli.commands.get(part))
-      || (currentContext.command && cli.commands.get(currentContext.command)?.commands.get(part))
-    ) {
+    if (parent.commands.get(part)) {
       currentContext = handleNewCommand(part, currentContext, commandStack)
       return
     }
@@ -62,7 +63,7 @@ export function parseCommandLine(cli: Cli) {
       return
     }
 
-    const similar = CliComponent.findSimilarName(part, cli.commands)
+    const similar = CliComponent.findSimilarName(part, parent.commands)
 
     if (similar) {
       const errorLog = logUnrecognizedCommandError('subcommand', part)
@@ -70,10 +71,16 @@ export function parseCommandLine(cli: Cli) {
 
       const similarLog = printSimilarArg('subcommand', similar.name)
       logger.append(similarLog)
+
+      const usageLog = similar.getUsageLog()
+      logger.append(usageLog)
     }
     else {
       const errorLog = logUnexpectedArgumentError('argument', part)
       logger.append(errorLog)
+
+      const usageLog = cli.getUsageLog()
+      logger.append(usageLog)
     }
 
     process.exit(1)
@@ -107,10 +114,14 @@ function handleOption(cli: Cli | Command, part: string, context: Context) {
   if (similar) {
     const similarLog = printSimilarArg('argument', `--${similar.name}`)
     logger.append(similarLog)
+    const usageLog = similar.getUsageLog()
+    logger.append(usageLog)
   }
   else {
     const tipsLog = Option.printTip(part)
     logger.append(tipsLog)
+    const usageLog = cli.getUsageLog()
+    logger.append(usageLog)
   }
 
   process.exit(1)

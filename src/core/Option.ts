@@ -59,11 +59,8 @@ export class Option extends CliComponent {
   }
 
   static printTip(name: string) {
-    // const tip = chalk.green('tip:')
     const value = chalk.yellow(name)
     const usage = chalk.green(`-- ${name}`)
-
-    // console.log(`  ${tip} to pass '${value}' as a value, use '${usage}'\n`)
 
     return {
       type: LogType.Tips,
