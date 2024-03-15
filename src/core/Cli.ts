@@ -1,17 +1,19 @@
 import process from 'node:process'
 import { Collection } from '@discordjs/collection'
 import { version as packageVersion } from '../../package.json'
-import { Arg, Command, Option } from '@/core'
-import { printHelperText } from '@/utils/console-helper'
-import { executeParse, parseCommandLine } from '@/utils/process-helper'
-import { createDefaultCommands, createDefaultOptions } from '@/utils/default-command'
+import { Argument } from '@/core/Argument'
+import { Command } from '@/core/Command'
+import { Option } from '@/core/Option'
 import type { Log } from '@/utils/Logger'
 import { LogType, Logger } from '@/utils/Logger'
+import { printHelperText } from '@/utils/console-helper'
+import { createDefaultCommands, createDefaultOptions } from '@/utils/default-command'
+import { executeParse, parseCommandLine } from '@/utils/process-helper'
 
 const logger = Logger.getInstance()
 
 export class Cli {
-  public args: Collection<string, Arg> = new Collection()
+  public args: Collection<string, Argument>
   public commands: Collection<string, Command>
   public options: Collection<string, Option>
 
@@ -19,6 +21,7 @@ export class Cli {
 
   constructor(public name: string, private desc: string = '') {
     this.setUpExitListener()
+    this.args = new Collection()
     this.commands = createDefaultCommands(this)
     this.options = createDefaultOptions(this)
   }
@@ -53,9 +56,9 @@ export class Cli {
     return this
   }
 
-  arg(arg: string | Arg, desc?: string) {
-    if (!(arg instanceof Arg))
-      arg = new Arg(arg, desc)
+  argument(arg: string | Argument, desc?: string) {
+    if (!(arg instanceof Argument))
+      arg = new Argument(arg, desc)
 
     arg.parent = this
 
@@ -82,10 +85,6 @@ export class Cli {
     return executeParse(this, this.parse())
   }
 
-  printUsage() {
-
-  }
-
   getDescription() {
     return this.desc
   }
@@ -95,8 +94,13 @@ export class Cli {
   }
 
   getUsageLog(): Log {
-    const argsUsage = this.args.size ? this.args.reduce((previous, arg) => `${previous} [${arg.toString().toUpperCase()}]`, '') : ''
-    const message = `${this.name} [OPTIONS]${argsUsage} [COMMAND]`
+    const argsUsage = this.args.size
+      ? this.args.map(arg => arg.toString())
+        .join(' ')
+      : ''
+    const hasOptions = this.options.size > 0
+    const hasCommands = this.commands.size > 0
+    const message = `${this.name} ${hasOptions ? '[OPTIONS]' : ''} ${argsUsage} ${hasCommands ? '[COMMAND]' : ''}`
 
     return {
       type: LogType.Usage,

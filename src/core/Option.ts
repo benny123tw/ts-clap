@@ -1,8 +1,8 @@
 import chalk from 'chalk'
-import { LogType } from '..'
-import { CliComponent } from '@/core'
+import { BaseArgument } from './BaseArgument'
+import { LogType } from '@/utils/Logger'
 
-export class Option extends CliComponent {
+export class Option extends BaseArgument {
   private short_name: string = ''
   private value_name: string = ''
 

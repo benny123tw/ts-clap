@@ -1,7 +1,9 @@
 import type { Collection } from '@discordjs/collection'
 import chalk from 'chalk'
-import type { CliComponent, Command, Option } from '@/core'
-import { Arg, Cli } from '@/core'
+import type { Argument, Option } from '@/core'
+import type { BaseArgument } from '@/core/BaseArgument'
+import { Cli, Command } from '@/core'
+import type { Log } from '@/utils/Logger'
 import { LogType } from '@/utils/Logger'
 
 interface Options {
@@ -10,7 +12,7 @@ interface Options {
 }
 
 export function calculateMaxWidth(cli: Cli | Command) {
-  const components: Collection<string, CliComponent>[] = [cli.commands, cli.options]
+  const components: Collection<string, Argument>[] = [cli.commands, cli.options]
   return components
     .concat(cli instanceof Cli ? [cli.args] : [])
     .reduce(
@@ -21,7 +23,7 @@ export function calculateMaxWidth(cli: Cli | Command) {
 }
 
 export function printWithDescription(
-  args: Collection<string, CliComponent>,
+  args: Collection<string, Argument>,
   { maxWidth, paddingLeft }: Options,
 ) {
   args.forEach((arg) => {
@@ -30,10 +32,7 @@ export function printWithDescription(
       return
     }
 
-    let argName = arg.name
-    if (arg instanceof Arg)
-      argName = `[${argName.toUpperCase()}]`
-
+    const argName = arg.toString()
     const padding = ' '.repeat(maxWidth - argName.length)
     const padding_left = ' '.repeat(paddingLeft)
     console.log(`${padding_left}${argName}${padding}  ${arg.getDescription()}`)
@@ -76,7 +75,7 @@ export function printHelperText(t: Command | Cli) {
   }
 
   // arguments
-  if (t instanceof Cli && t.args.size) {
+  if (t.args.size) {
     console.log(chalk.underline('Arguments'))
     printWithDescription(t.args, { maxWidth, paddingLeft: 2 })
   }
@@ -117,5 +116,25 @@ export function logUnrecognizedCommandError(type: string, command: string) {
   return {
     type: LogType.Error,
     message: unrecognizedCommandMessage,
+  }
+}
+
+export function getUsageLog(t: Cli | BaseArgument): Log {
+  let current: Cli | BaseArgument = t
+  let message = t.toString({ withShort: false })
+  if (current instanceof Command) {
+    const argsUsage = current.args.map(arg => arg.toString({ withShort: false })).join(' ')
+    const hasOptions = current.options.size > 0
+    const hasCommands = current.commands.size > 0
+    message = `${message} ${hasOptions ? '[OPTIONS]' : ''} ${argsUsage} ${hasCommands ? '[COMMAND]' : ''}`
+  }
+  while (!(current instanceof Cli) && current.parent !== null) {
+    current = current.parent
+    message = `${current.toString({ withShort: false })} ${message}`
+  }
+
+  return {
+    type: LogType.Usage,
+    message,
   }
 }

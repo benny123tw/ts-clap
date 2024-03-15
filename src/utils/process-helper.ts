@@ -1,6 +1,6 @@
 import process from 'node:process'
 import type { Cli, Command } from '@/core'
-import { CliComponent, Option } from '@/core'
+import { Argument, Option } from '@/core'
 import { logUnexpectedArgumentError, logUnrecognizedCommandError, printSimilarArg } from '@/utils/console-helper'
 import { Logger } from '@/utils/Logger'
 
@@ -24,8 +24,6 @@ export interface Context {
 }
 
 export function parseCommandLine(cli: Cli) {
-  const registryArgs = Array.from(cli.args.keys())
-
   const parts = process.argv.slice(2)
   const commandStack: Context[] = []
   const rootContext: Context = createNewContext(true)
@@ -40,7 +38,9 @@ export function parseCommandLine(cli: Cli) {
   parts.forEach((part) => {
     // default set to last parent cuz the argument is not a command
     parent = getParent(currentContext, parent)
+    const registryArgs = Array.from(parent.args.keys())
     const option = parent?.options.find(o => o.validate(Option.extractOption(lastOption || '')))
+    const command = parent?.commands.get(part)
 
     if (part.match(/^-/)) {
       lastOption = handleOption(parent, part, currentContext)
@@ -53,17 +53,17 @@ export function parseCommandLine(cli: Cli) {
       return
     }
 
-    if (parent.commands.get(part)) {
+    if (command) {
       currentContext = handleNewCommand(part, currentContext, commandStack)
       return
     }
 
     if (registryArgs.length && lastArgIndex < registryArgs.length) {
-      lastArgIndex = handleArg(part, rootContext, registryArgs, lastArgIndex)
+      lastArgIndex = handleArg(part, currentContext, registryArgs, lastArgIndex)
       return
     }
 
-    const similar = CliComponent.findSimilarName(part, parent.commands)
+    const similar = Argument.findSimilarName(part, parent.commands)
 
     if (similar) {
       const errorLog = logUnrecognizedCommandError('subcommand', part)
@@ -109,7 +109,7 @@ function handleOption(cli: Cli | Command, part: string, context: Context) {
   const errorLog = logUnexpectedArgumentError('option', part)
   logger.append(errorLog)
 
-  const similar = CliComponent.findSimilarName(part, cli.options)
+  const similar = Argument.findSimilarName(part, cli.options)
 
   if (similar) {
     const similarLog = printSimilarArg('argument', `--${similar.name}`)
@@ -144,7 +144,7 @@ function handleArg(
 }
 
 function handleNewCommand(part: string, currentContext: Context, commandStack: Context[]): Context {
-  const newContext = createNewContext()
+  const newContext = createNewContext(true)
   newContext.command = part
   currentContext.subcommand = newContext
   commandStack.push(currentContext)
@@ -189,7 +189,7 @@ export function executeParse(cli: Cli | Command, context: Context) {
     process.exit(1)
   }
 
-  cmd.execute(...context.options)
+  cmd.execute(context.options.concat(context?.args || []))
 
   // Recursively execute subcommands if they exist.
   if (context.subcommand)

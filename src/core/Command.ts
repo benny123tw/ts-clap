@@ -1,12 +1,14 @@
 import { Collection } from '@discordjs/collection'
-import { CliComponent } from '@/core/CliComponent'
+import { BaseArgument } from './BaseArgument'
+import { Argument } from '@/core/Argument'
 import { Option } from '@/core/Option'
 import { printHelperText } from '@/utils/console-helper'
-import type { OptionValue } from '@/utils/process-helper'
 import { createDefaultOptions } from '@/utils/default-command'
+import type { ArgValue, OptionValue } from '@/utils/process-helper'
 
-export class Command extends CliComponent {
-  public commands: Collection<string, Command> = new Collection()
+export class Command extends BaseArgument {
+  public args: Collection<string, Argument>
+  public commands: Collection<string, Command>
   public options: Collection<string, Option>
 
   private callback: CallableFunction = () => {
@@ -15,6 +17,8 @@ export class Command extends CliComponent {
 
   constructor(name: string, desc: string = '') {
     super(name, desc)
+    this.args = new Collection()
+    this.commands = new Collection()
     this.options = createDefaultOptions(this)
   }
 
@@ -32,10 +36,6 @@ export class Command extends CliComponent {
     return this
   }
 
-  short() {
-    return this
-  }
-
   option(op: string | Option, desc: string = '') {
     if (!(op instanceof Option))
       op = new Option(op, desc)
@@ -46,12 +46,22 @@ export class Command extends CliComponent {
     return this
   }
 
+  argument(arg: string | Argument, desc: string = '') {
+    if (!(arg instanceof Argument))
+      arg = new Argument(arg, desc)
+
+    arg.parent = this
+
+    this.args.set(arg.name, arg)
+    return this
+  }
+
   action(callback: (...flags: OptionValue[]) => void) {
     this.callback = callback
     return this
   }
 
-  execute(...flags: OptionValue[]) {
+  execute(flags: (OptionValue | ArgValue)[]) {
     const names = flags.map(({ name }) => name)
 
     if (this.hasDefaultFlags(names)) {

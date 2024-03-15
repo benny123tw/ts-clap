@@ -1,8 +1,9 @@
 import process from 'node:process'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import chalk from 'chalk'
-import { Cli, CliComponent, Command, Option } from '../src/index'
 import { LogType } from '../src/utils/Logger'
+import { Cli, Command, Option } from '@/core'
+import { BaseArgument } from '@/core/BaseArgument'
 import { logUnexpectedArgumentError, printSimilarArg } from '@/utils/console-helper'
 
 const mockCli = new Cli('My new app')
@@ -40,7 +41,7 @@ describe('parse command line', () => {
     const parsed = mockCli.parse()
     expect(parsed).toStrictEqual({
       command: null,
-      subcommand: { command: 'hello', subcommand: null, options: [] },
+      subcommand: { args: [], command: 'hello', subcommand: null, options: [] },
       options: [],
       args: [],
     })
@@ -52,6 +53,7 @@ describe('parse command line', () => {
     expect(parsed).toStrictEqual({
       command: null,
       subcommand: {
+        args: [],
         command: 'hello',
         subcommand: null,
         options: [{ name: 'name', value: 'John' }],
@@ -103,7 +105,7 @@ describe('parse command line', () => {
     expect(errorLog.type).to.eq(LogType.Error)
     expect(errorLog.message).to.eq(`unexpected option '${chalk.yellow('--nam')}' found`)
 
-    const similar = CliComponent.findSimilarName('--nam', parentCommand!.options)
+    const similar = BaseArgument.findSimilarName('--nam', parentCommand!.options)
     expect(similar).to.deep.equals(parentCommand!.options.get('name'))
 
     const similarLog = printSimilarArg('option', `--${similar?.name}`)
